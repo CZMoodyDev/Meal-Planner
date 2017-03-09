@@ -1,7 +1,7 @@
 # Meal-Planner
 In-house tool for purchasing and creating frozen meals
 
-This tool does not include the includes directory that has the connection information...but it uses a locally hosted mySQL database. 
+This tool does not include the includes directory that has the connection information...and it uses a locally hosted mySQL database. 
 
 It uses one table with these fields:
 * rid (Primary key, recipe ID)
