@@ -57,9 +57,11 @@ if (isset($_GET['recs'])) {
     ksort($master_shop_list);
     foreach ($master_shop_list as $name => $data) {
         $ingredient_lines = $name . ": ";
+        $ingredient_metrics = array();
         foreach ($data as $unit => $amount) {
-            $ingredient_lines .= (string)$amount . $unit . " ";
+            array_push($ingredient_metrics, (string)$amount . $unit);
         }
+        $ingredient_lines .= implode(" + ", $ingredient_metrics);
         $shopping .= $ingredient_lines . "<br>";
     }
 }
