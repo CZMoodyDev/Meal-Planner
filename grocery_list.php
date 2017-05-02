@@ -4,35 +4,41 @@ $front_matter = array(
 );
 
 include_once $front_matter['www'] . '/includes/connection.php';
+include_once $front_matter['www'] . '/snippets/mealplanner_fn.php';
 session_start();
 
-$sql_allrecipes = "SELECT * FROM recipes";
-$recipes = array();    
-$result = $conn->query($sql_allrecipes);
-
-if ($result != false && $result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $recipes[$row['name']] = array();
-        $recipes[$row['name']]['instructions'] = $row['instructions'];
-        $recipes[$row['name']]['ingredients'] = json_decode($row['ingredients'], true);
-        $recipes[$row['name']]['rid'] = $row['rid'];
-    }
-}
+$recipes = getAllRecipes($conn); 
 
 $instruction_list = "";
 $shopping = "";
 $master_shop_list = array();
 
-if (isset($_POST['rec-list'])) {
-    echo $_POST['rec-list'] . "<br>";
+if (isset($_GET['recs'])) {   
+    $recArray = explode(",", $_GET['recs']);
+    $recArray = replaceIDsWithRecipes($recArray, $recipes);
     
-    $recArray = explode(",", $_POST['rec-list']);
+        
     $n = sizeof($recArray);
     $seen_inst = array();
     
     for ($x = 0; $x < $n; $x++) {
         if (!in_array($recArray[$x], $seen_inst)) {
-            $instruction_list = $instruction_list . "<h3>" . $recArray[$x] . "</h3>" . $recipes[$recArray[$x]]['instructions'];
+            $instruction_list = $instruction_list . "<h3>" . $recArray[$x] . "</h3>";
+            $instruction_list .= '<table><tr>';
+            $formatted_i = str_replace("*", "<br><strong>", $recipes[$recArray[$x]]['instructions']);
+            $formatted_i = str_replace("~", "</strong><br><i>", $formatted_i);
+            $formatted_i .= "</i>";
+            $instruction_list .= '<td width="50%">' . $formatted_i . '</td>';
+            
+            $instruction_list .= '<td><ul>';
+            foreach ($recipes[$recArray[$x]]['ingredients'] as $index => $data) {
+                $itemU = $data['unit'];
+                $itemM = $data['measure'];
+                $itemN = $data['iName'];
+                $instruction_list .= '<li>' . $itemM . $itemU . ' ' . $itemN . '</li>';
+            }
+            
+            $instruction_list .= '</ul></td></tr></table>';
         }
         array_push($seen_inst, $recArray[$x]);
         

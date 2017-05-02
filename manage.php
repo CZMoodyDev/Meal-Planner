@@ -4,71 +4,108 @@ $front_matter = array(
 );
 
 include_once $front_matter['www'] . '/includes/connection.php';
+include_once $front_matter['www'] . '/snippets/mealplanner_fn.php';
 session_start();
 
-include_once $front_matter['www'] . '/snippets/mealplanner_fn.php';
-include_once $front_matter['www'] . '/snippets/cookbook_interface.php';
+$recipes = getAllRecipes($conn);
+$recipe_json = json_encode($recipes);
 ?>
-<button onClick="addRecipe()">Add recipe to list</button><br><br>
-<button onClick="removeRecipe()">Remove recipe from list</button><br><br>
-
-
-<form method="post" id="convert" action="./grocery_list.php">
-Recipe List:<br>
-<textarea id="rec-list" name="rec-list"></textarea><br><br>
-<input type="submit" value="Create grocery list">
-</form>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frozen Meal Planner</title>
+</head>
+<body>
+<div id="list-maker"> <!-- TODO: EQUAL HEIGHT -->
+    <div id="recipe-list">
+    <?php if (!empty($recipes)) { ?>
+        <ul><?php
+        foreach ($recipes as $n => $data) {
+            echo '<li><button onClick="addToList(\''.$n.'\')">'.$n.'</button></li>';
+        }
+        ?></ul>
+    <?php } else {
+        echo '<p>No recipes found.</p>';
+    }?>
+    </div>
+    <div id="list-panel">
+        <div id="shopping-list">
+            <p id="shopping-list-canvas">Click on a recipe to add it to the list.</p>
+        </div>
+        <div id="list-btns">
+            <button type="button" onclick="buildList()">Build List</button>
+            <button type="button" onclick="saveList()">Save List</button>
+            <button type="button" onclick="loadList()">Load List</button>
+        </div>
+    </div>
+</div>
 
 <script type="text/javascript">
-var recipes = '<?php echo $recipe_json; ?>';
-var RECIPE_COUNT = 0;
+var recipes = '<?php echo str_replace("\\r\\n", "<br>", $recipe_json); ?>';
 recipes = JSON.parse(recipes);
-console.log(recipes);
 
-function displayRecipe(i) {
-    console.log(i);
-    document.getElementById("rec-name").innerHTML = i;
-    document.getElementById("rec-inst").innerHTML = recipes[i]['instructions'];
-    
-    var ul = document.createElement("ul");
-    for (var x = 0; x < recipes[i]['ingredients'].length; x++) {
+var RID_LIST = [];
+var RID_TRACKER = {};
+
+function addToList(i) {
+    var elem = document.getElementById("shopping-list-canvas");
+    if (elem != null) {
+        elem.remove();       
+    }
+
+    var sList = document.getElementById("shopping-list");    
+    if (RID_LIST.length == 0) {
+        sList.innerHTML = "";
+        var ul = document.createElement("ul");
+        ul.id = "list-manager";
+        sList.appendChild(ul);
+    }
+
+    if (RID_TRACKER[recipes[i]['rid'].toString()] != undefined) {
+        var recipeLine = document.getElementById(i.replace(/ /g, "-"));
+        recipeLine.innerHTML = (RID_TRACKER[recipes[i]['rid'].toString()] + 1).toString() + "x ";
+        recipeLine.innerHTML += i;
+    } else {
+        RID_TRACKER[recipes[i]['rid'].toString()] = 0;
         var li = document.createElement("li");
-        li.appendChild(document.createTextNode(recipes[i]['ingredients'][x]['measure'] + recipes[i]['ingredients'][x]['unit'] + ": " + recipes[i]['ingredients'][x]['iName']));
-        ul.appendChild(li);
+        li.id = i.replace(/ /g, "-");
+        li.onclick = function () {deleteFromList(i);}
+        li.innerHTML = (RID_TRACKER[recipes[i]['rid'].toString()] + 1).toString() + "x ";
+        li.innerHTML += i;
+        
+        document.getElementById("list-manager").appendChild(li);
     }
-    document.getElementById("rec-ingr").innerHTML = "";
-    document.getElementById("rec-ingr").appendChild(ul);    
+    
+    RID_TRACKER[recipes[i]['rid'].toString()]++;
+    RID_LIST.push(recipes[i]['rid']);    
 }
 
-function addRecipe() {
-    var recName = document.getElementById("rec-name").innerHTML;
-    if (recName == "NULL") {
-        return;
-    }
-    
-    var recipeList = document.getElementById("rec-list").innerHTML;
-    if (recipeList == "") {
-        document.getElementById("rec-list").innerHTML = recipeList + recName; 
+function deleteFromList(i) {
+    if (RID_TRACKER[recipes[i]['rid'].toString()] == 1) {
+        delete RID_TRACKER[recipes[i]['rid'].toString()];
+        var rLine = document.getElementById(i.replace(/ /g, "-"));
+        rLine.remove();
     } else {
-        document.getElementById("rec-list").innerHTML = recipeList + "," + recName;        
+        var rLine = document.getElementById(i.replace(/ /g, "-"));
+        rLine.innerHTML = (RID_TRACKER[recipes[i]['rid'].toString()] - 1).toString() + "x ";
+        rLine.innerHTML += i;
+        RID_TRACKER[recipes[i]['rid'].toString()]--;
     }
     
-    RECIPE_COUNT++;
+    var index = RID_LIST.indexOf(recipes[i]['rid']);
+    if (index > -1) {
+        RID_LIST.splice(index, 1);
+    }
+}
 
-}
-function removeRecipe() {
-    var recName = document.getElementById("rec-name").innerHTML;
-    if (recName == "NULL") {
-        return;
-    }
+function buildList() {
     
-    var recipeList = document.getElementById("rec-list").innerHTML;
-    if (RECIPE_COUNT == 1) {
-        document.getElementById("rec-list").innerHTML = "";        
-    } else {
-        document.getElementById("rec-list").innerHTML = recipeList.replace("," + recName, ""); 
-    }
-    RECIPE_COUNT--;
+    var str = RID_LIST.join(",");
+    location.href = "./grocery_list.php?recs=" + str;
+    
 }
+
 </script>
+</body>
+</html>
 
