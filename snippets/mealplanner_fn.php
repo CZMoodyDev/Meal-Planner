@@ -89,8 +89,60 @@ function replaceIDsWithRecipes($a, $r) {
         $a[$i] = $idArr[(string)$v];
     }
     
-    return $a;
+    return $a; 
+}
+
+function createSection($r, $all_r) {
+    $ingredients = $all_r[$r]['ingredients'];
+    $instructions = $all_r[$r]['instructions'];
+    $id = $all_r[$r]['rid'];
     
+    $button_html = '<a href="#rec'.$id.'" class="btn btn-info rec-sec center-block" data-toggle="collapse">'.$r.'</a>';
+    
+    $section_html = '<div id="rec'.$id.'" class="collapse">';
+    
+    $ingredients_html = '<h3 class="rec-header">Ingredients</h3>';
+    $ingredients_html .= "<ul>";
+    
+    for ($x = 0; $x < count($ingredients); $x++) {
+        $html_li = "<li>";
+        $html_li .= $ingredients[$x]['measure'] . $ingredients[$x]['unit'] . ": " . $ingredients[$x]['iName'];
+        $html_li .= "</li>";
+        $ingredients_html .= $html_li;
+    }
+    
+    $ingredients_html .= '</ul>';
+    
+    $instructions_html = '<h3 class="rec-header">Instructions</h3>';
+    
+    $instruction_arr = explode("*", $instructions);
+    $instruction_temp = explode("~", $instruction_arr[1]);
+    
+    $inst_prep = $instruction_arr[0];
+    $inst_cook = $instruction_temp[0];
+    $inst_serve = $instruction_temp[1];
+        
+    if (strlen($inst_prep) > 0) {
+        $instructions_html .= '<p class="prep">'.$inst_prep.'</p>';
+    }
+    
+    if (strlen($inst_cook) > 0) {
+        $instructions_html .= '<p class="prep">'.$inst_cook.'</p>';
+    }
+    
+    if (strlen($inst_serve) > 0) {
+        $instructions_html .= '<p class="serve">'.$inst_serve.'</p>';
+    }
+    
+    $edit_btn = '<a class="btn btn-primary" href="./edit-recipe.php?id='.$id.'">Edit recipe</a>';
+    $del_btn = '<button class="btn btn-danger" role="button" onclick="deleteAlert(\''.$r.'\')">Delete recipe</button>';
+    
+    
+    
+    $section_html .= $ingredients_html . $instructions_html . $edit_btn . $del_btn;
+    $section_html .= '</div>';
+    
+    return $button_html . $section_html;
 }
 
 ?>

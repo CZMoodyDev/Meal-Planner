@@ -16,8 +16,7 @@ $master_shop_list = array();
 if (isset($_GET['recs'])) {   
     $recArray = explode(",", $_GET['recs']);
     $recArray = replaceIDsWithRecipes($recArray, $recipes);
-    
-        
+            
     $n = sizeof($recArray);
     $seen_inst = array();
     
